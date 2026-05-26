@@ -25,12 +25,14 @@ def health():
     return {"status": "ok", "model_loaded": True}
 
 @app.post("/predict")
-def predict(data: SensorData):
+def predict(data: SensorData, threshold: float = 0.5):
     if len(data.features) != 5:
         raise HTTPException(400, "Need exactly 5 features")
     arr = np.array(data.features).reshape(1, -1)
     pred = model.predict(arr)[0]
     result = "anomaly" if pred == -1 else "normal"
+    if result == "anomaly" and pred < threshold:
+        result = "normal"
 
     # Log to MLflow
     with mlflow.start_run(run_name=f"pred_{datetime.now().timestamp()}"):
